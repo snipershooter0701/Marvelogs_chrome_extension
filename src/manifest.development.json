@@ -1,0 +1,42 @@
+{
+    "manifest_version": 3,
+    "name": "Marvelogs Chrome extension",
+    "description": "An extension that highlights that element.",
+    "version": "0.0.1",
+    "permissions": [],
+    "icons": {
+        "128": "icons/256.png",
+        "64": "icons/256.png",
+        "16": "icons/256.png",
+        "32": "icons/256.png"
+    },
+    "action": {
+        "default_title": "Marvelogs Chrome extension",
+        "default_popup": "popup.html"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ],
+    "host_permissions": [
+        "https://*/",
+        "http://*/"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "@/assets/thumb/thumb2.png"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "options_page": "options.html"
+}
