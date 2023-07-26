@@ -1,4 +1,5 @@
 <script>
+import axios from 'axios';
 // import chromeWebStoreItemProperty from "chrome-web-store-item-property";
 // import puppetter from 'puppeteer'
 // import Prism from 'prismjs'
@@ -15,7 +16,7 @@ export default {
   },
 
   mounted() {
-    this.index();
+    // this.index();
     this.handlerClickEvent();
   },
   unmounted() {
@@ -37,7 +38,30 @@ export default {
 
     getXPathResult(element) {
       const xpath = this.getXPathChild(element);
-      alert(xpath);
+      const highlighted_URI = element.baseURI;
+      console.log(highlighted_URI);
+      console.log(xpath);
+
+      alert(`{
+        url: ${highlighted_URI}, 
+        path:[${xpath}]
+      }`);
+
+      axios.post('https://app.marvelogs.com/path', {
+        params: {
+          url: highlighted_URI,
+          path: xpath
+        }
+      })
+        .then(function (response) {
+          console.log(response);
+        })
+        .catch(function (error) {
+          console.log(error);
+        })
+        .finally(function () {
+          // always executed
+        });
 
     },
 
@@ -79,7 +103,7 @@ export default {
       document.addEventListener('mouseover', (event) => {
         event.target.classList.add('border-yellow');
       });
-  
+
       document.addEventListener('mouseout', (event) => {
         event.target.classList.remove('border-yellow');
       });
