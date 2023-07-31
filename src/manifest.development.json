@@ -3,7 +3,10 @@
     "name": "Marvelogs Chrome extension",
     "description": "An extension that highlights that element.",
     "version": "0.0.1",
-    "permissions": [],
+    "permissions": [
+        "tabs",
+        "activeTab"
+    ],
     "icons": {
         "128": "icons/256.png",
         "64": "icons/256.png",

@@ -39,19 +39,24 @@ export default {
     getXPathResult(element) {
       const xpath = this.getXPathChild(element);
       const highlighted_URI = element.baseURI;
-      console.log(highlighted_URI);
-      console.log(xpath);
 
-      alert(`{
-        url: ${highlighted_URI}, 
-        path:[${xpath}]
-      }`);
+      // Content script or inline script in the webpage
+      // If using a content script, ensure it is properly injected into the webpage
+
+      const message = {
+        data: 'Your message data here',
+      };
+
+      // Send the message to the extension
+      chrome.runtime.sendMessage(message, function (response) {
+        // Handle the response from the extension (if any)
+        console.log('Response from extension:', response);
+      });
+
 
       axios.post('https://app.marvelogs.com/path', {
-        params: {
-          url: highlighted_URI,
-          path: xpath
-        }
+        url: highlighted_URI,
+        path: xpath
       })
         .then(function (response) {
           console.log(response);
@@ -95,7 +100,6 @@ export default {
           item.classList.remove('highlighted');
         });
       }
-
       element.classList.add('highlighted');
     },
 

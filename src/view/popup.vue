@@ -1,73 +1,99 @@
 <template>
   <div class="main_app">
-    <div class="container">
+    <div class="container" v-if="logined">
       <div class="text">
         Marvelogs
       </div>
       <form action="#">
         <div class="form-row">
           <div class="input-data">
-            <input type="text" required>
-            <div class="underline"></div>
-            <label for="">First Name</label>
-          </div>
-          <div class="input-data">
-            <input type="text" required>
-            <div class="underline"></div>
-            <label for="">Last Name</label>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="input-data">
-            <input type="text" required>
+            <input type="text" id="extension_email" required>
             <div class="underline"></div>
             <label for="">Email Address</label>
           </div>
           <div class="input-data">
-            <input type="text" required>
+            <input type="password" id="extension_pass" required>
             <div class="underline"></div>
-            <label for="">Website Name</label>
+            <label for="">Password</label>
           </div>
         </div>
         <div class="form-row">
-          <div class="input-data textarea">
-            <textarea rows="8" cols="80" required></textarea>
-            <br />
-            <div class="underline"></div>
-            <label for="">Write your message</label>
-            <br />
-            <div class="form-row submit-btn">
-              <div class="input-data">
-                <div class="inner"></div>
-                <input type="submit" value="submit">
-              </div>
+          <div class="form-row submit-btn">
+            <div class="input-data">
+              <div class="inner"></div>
+              <input type="submit" id="extension_submit" value="Sign In" @:click="loginUser">
             </div>
           </div>
         </div>
       </form>
     </div>
 
+    <div class="container" v-else>
+      <div class="text">
+        Marvelogs
+      </div>
+      <div class="sm-text">
+        Please highlight any element on the webpage that you want to track
+      </div>
+
+    </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'popupView',
   data() {
     return {
-      msg: 'popup'
+      msg: 'popup',
+      logined: true,
     }
+  },
+  mounted() {
+    this.handlerLoginedUser();
+  },
+  methods: {
+
+    handlerLoginedUser() {
+      const user_token = localStorage.getItem('token');
+      if (user_token) {
+        this.logined = false;
+      }
+    },
+
+    loginUser(event) {
+      event.preventDefault();
+
+      const _this = this;
+      const email = document.getElementById('extension_email').value;
+      const pass = document.getElementById('extension_pass').value;
+
+      axios.post('https://app.marvelogs.com/cx-login', {
+        email: email,
+        password: pass
+      })
+        .then(function (response) {
+          console.log(response.data.token);
+          if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+            _this.logined = false;
+          }
+        })
+        .catch(function (error) {
+          console.log(error);
+        })
+        .finally(function () {
+          // always executed
+        });
+    },
   }
 }
 
 </script>
 
 <style>
-/* .main_app {
-  width: 300px;
-  height: 450px;
-} */
-
 @import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap');
 
 * {
@@ -89,9 +115,10 @@ body {
 }
 
 .container {
-  max-width: 300px;
+  max-width: 400px;
   background: #fff;
-  width: 300px;
+  width: 400px;
+  height: 350px;
   padding: 25px 40px 10px 40px;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
@@ -104,6 +131,18 @@ body {
   background: -webkit-linear-gradient(right, #56d8e4, #9f01ea, #56d8e4, #9f01ea);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.container .sm-text {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  background: -webkit-linear-gradient(right, #56d8e4, #9f01ea, #56d8e4, #9f01ea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-top: 40px;
+
 }
 
 .container form {
@@ -132,7 +171,7 @@ form .form-row .textarea {
   width: 100%;
   height: 100%;
   border: none;
-  font-size: 17px;
+  font-size: 15px;
   border-bottom: 2px solid rgba(0, 0, 0, 0.12);
 }
 
@@ -239,6 +278,7 @@ form .form-row .textarea {
   }
 
   .submit-btn .input-data {
-    width: 40% !important;
+    width: 100% !important;
   }
-}</style>
+}
+</style>
