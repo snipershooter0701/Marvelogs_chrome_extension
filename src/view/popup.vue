@@ -1,10 +1,10 @@
 <template>
   <div class="main_app">
-    <div class="container" v-if="logined">
+    <div class="container">
       <div class="text">
         Marvelogs
       </div>
-      <form action="#">
+      <form action="#" v-if="showBlock">
         <div class="form-row">
           <div class="input-data">
             <input type="text" id="extension_email" required>
@@ -26,15 +26,17 @@
           </div>
         </div>
       </form>
-    </div>
 
-    <div class="container" v-else>
-      <div class="text">
-        Marvelogs
+      <div class="sm-text" v-else>
+        {{ text }}
       </div>
-      <div class="sm-text">
-        Please highlight any element on the webpage that you want to track
+
+      <div v-show="trackIf">
+        <button class="button" @:click="trackHighlight(1)">Yes</button>
+        <button class="button" @:click="trackHighlight(0)">No</button>
       </div>
+
+      <popup v-if="isPopupVisible" :title="popupTitle" :message="popupMessage" @close="closePopup" />
 
     </div>
   </div>
@@ -48,24 +50,81 @@ export default {
   data() {
     return {
       msg: 'popup',
-      logined: true,
+      showBlock: true,
+      trackIf: false,
+      text: '',
+      isPopupVisible: false,
+      popupTitle: "title",
+      popupMessage: "You are welcome"
     }
   },
   mounted() {
+    this.receiveDataToBackground();
     this.handlerLoginedUser();
   },
   methods: {
 
+    trackHighlight(param) {
+
+      const _this = this;
+
+      this.showBlock = false;
+      this.trackIf = false;
+
+      if (param == 1) {
+        const highlighted_URI = localStorage.getItem('url');
+        const xpath = localStorage.getItem('xpath');
+
+        axios.post('https://app.marvelogs.com/path', {
+          url: highlighted_URI,
+          path: xpath
+        })
+          .then(function (response) {
+            console.log(response);
+            _this.text = 'Successful';
+          })
+          .catch(function (error) {
+            console.log(error);
+          })
+          .finally(function () {
+            // always executed
+          });
+
+      } else {
+        this.text = 'Please highlight any element on the webpage that you want to track';
+        localStorage.removeItem("url");
+        localStorage.removeItem("xpath");
+      }
+    },
+
+    receiveDataToBackground() {
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message.key == 'tracked') {
+          this.showBlock = false;
+          this.text = 'Are you sure you want to track this?';
+          this.trackIf = true;
+        }
+      });
+    },
+
     handlerLoginedUser() {
       const user_token = localStorage.getItem('token');
-      if (user_token) {
-        this.logined = false;
+      const url = localStorage.getItem('url');
+      const xpath = localStorage.getItem('xpath');
+
+      if (user_token && (url && xpath)) {
+        this.showBlock = false;
+        this.text = 'Are you sure you want to track this?';
+        this.trackIf = true;
+      } else if (user_token && !(url && xpath)) {
+        this.showBlock = false;
+        this.trackIf = false;
+        this.text = 'Please highlight any element on the webpage that you want to track';
       }
     },
 
     loginUser(event) {
       event.preventDefault();
-
       const _this = this;
       const email = document.getElementById('extension_email').value;
       const pass = document.getElementById('extension_pass').value;
@@ -78,7 +137,9 @@ export default {
           console.log(response.data.token);
           if (response.data.token) {
             localStorage.setItem('token', response.data.token);
-            _this.logined = false;
+            _this.showBlock = false;
+            _this.trackIf = false;
+            _this.text = 'Please highlight any element on the webpage that you want to track';
           }
         })
         .catch(function (error) {
@@ -258,6 +319,20 @@ form .form-row .textarea {
   cursor: pointer;
   position: relative;
   z-index: 2;
+}
+
+.button {
+  background: -webkit-linear-gradient(right, #56d8e4, #9f01ea, #56d8e4, #9f01ea);
+  transition: all 0.4s;
+  border: none;
+  color: white;
+  padding: 12px 20%;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  margin: 35px 2px;
+  cursor: pointer;
+  font-size: 17px;
 }
 
 @media (max-width: 700px) {

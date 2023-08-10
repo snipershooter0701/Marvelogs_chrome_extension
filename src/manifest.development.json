@@ -5,8 +5,12 @@
     "version": "0.0.1",
     "permissions": [
         "tabs",
-        "activeTab"
+        "activeTab",
+        "scripting"
     ],
+    "background": {
+        "service_worker": "background.js"
+    },
     "icons": {
         "128": "icons/256.png",
         "64": "icons/256.png",
@@ -23,7 +27,7 @@
                 "<all_urls>"
             ],
             "js": [
-                "content.js"
+                "/content.js"
             ]
         }
     ],

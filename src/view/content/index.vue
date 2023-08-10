@@ -1,8 +1,4 @@
 <script>
-import axios from 'axios';
-// import chromeWebStoreItemProperty from "chrome-web-store-item-property";
-// import puppetter from 'puppeteer'
-// import Prism from 'prismjs'
 
 export default {
   components: {
@@ -12,7 +8,6 @@ export default {
   name: "mainContentView",
 
   created: function () {
-
   },
 
   mounted() {
@@ -20,7 +15,6 @@ export default {
     this.handlerClickEvent();
   },
   unmounted() {
-
   },
   data() {
     return {
@@ -29,44 +23,30 @@ export default {
   },
   methods: {
     handlerClickEvent() {
-      const _this = this;
+      // const _this = this;
       document.addEventListener('click', (event) => {
-        _this.highlightItems(event.target);
-        _this.getXPathResult(event.target);
+        this.highlightItems(event.target);
+        this.getXPathResult(event.target);
       });
     },
 
     getXPathResult(element) {
       const xpath = this.getXPathChild(element);
       const highlighted_URI = element.baseURI;
+      console.log(xpath);
+      console.log(highlighted_URI);
 
-      // Content script or inline script in the webpage
-      // If using a content script, ensure it is properly injected into the webpage
+      if (xpath && highlighted_URI) {
+        // display the toastr
+        console.log('dddddd');
+        
+        localStorage.setItem('url', highlighted_URI);
+        localStorage.setItem('xpath', xpath);
 
-      const message = {
-        data: 'Your message data here',
-      };
-
-      // Send the message to the extension
-      chrome.runtime.sendMessage(message, function (response) {
-        // Handle the response from the extension (if any)
-        console.log('Response from extension:', response);
-      });
-
-
-      axios.post('https://app.marvelogs.com/path', {
-        url: highlighted_URI,
-        path: xpath
-      })
-        .then(function (response) {
-          console.log(response);
-        })
-        .catch(function (error) {
-          console.log(error);
-        })
-        .finally(function () {
-          // always executed
+        chrome.runtime.sendMessage({
+          key: 'highlighted'
         });
+      }
 
     },
 
@@ -86,11 +66,6 @@ export default {
       const parseChildClassName = child.replace(' ', '.');
       const parse_xpath = `.${parseParentClassName} .${parseChildClassName}[${index}]`;
       return parse_xpath;
-    },
-
-    checkXPathCount(xpath) {
-      const items = document.querySelectorAll(xpath);
-      return items.length;
     },
 
     highlightItems(element) {
