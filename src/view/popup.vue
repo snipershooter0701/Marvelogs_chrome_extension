@@ -72,28 +72,33 @@ export default {
       this.trackIf = false;
 
       if (param == 1) {
-        const highlighted_URI = localStorage.getItem('url');
-        const xpath = localStorage.getItem('xpath');
+        chrome.storage.local.get(["url", "xpath"]).then((result) => {
+          console.log(result.url);
+          console.log(result.xpath);
 
-        axios.post('https://app.marvelogs.com/path', {
-          url: highlighted_URI,
-          path: xpath
-        })
-          .then(function (response) {
-            console.log(response);
-            _this.text = 'Successful';
-          })
-          .catch(function (error) {
-            console.log(error);
-          })
-          .finally(function () {
-            // always executed
-          });
-
+          if (result.url && result.xpath) {
+            axios.post('https://app.marvelogs.com/path', {
+              url: result.url,
+              path: result.xpath
+            })
+              .then(function (response) {
+                console.log(response);
+                if (response.data == '1') {
+                  _this.text = 'Successful';
+                }
+              })
+              .catch(function (error) {
+                console.log(error);
+              })
+              .finally(function () {
+                // always executed
+              });
+          }
+        });
       } else {
-        this.text = 'Please highlight any element on the webpage that you want to track';
-        localStorage.removeItem("url");
-        localStorage.removeItem("xpath");
+        chrome.storage.local.remove(['url', 'xpath'], (result) => {
+          _this.text = 'Please highlight any element on the webpage that you want to track';
+        });
       }
     },
 
@@ -108,19 +113,18 @@ export default {
     },
 
     handlerLoginedUser() {
-      const user_token = localStorage.getItem('token');
-      const url = localStorage.getItem('url');
-      const xpath = localStorage.getItem('xpath');
+      chrome.storage.local.get(["token", "url", "xpath"]).then((result) => {
+        if (result.token && (result.url && result.xpath)) {
+          this.showBlock = false;
+          this.text = 'Are you sure you want to track this?';
+          this.trackIf = true;
 
-      if (user_token && (url && xpath)) {
-        this.showBlock = false;
-        this.text = 'Are you sure you want to track this?';
-        this.trackIf = true;
-      } else if (user_token && !(url && xpath)) {
-        this.showBlock = false;
-        this.trackIf = false;
-        this.text = 'Please highlight any element on the webpage that you want to track';
-      }
+        } else if (result.token && !(result.url && result.xpath)) {
+          this.showBlock = false;
+          this.trackIf = false;
+          this.text = 'Please highlight any element on the webpage that you want to track';
+        }
+      });
     },
 
     loginUser(event) {
@@ -134,12 +138,13 @@ export default {
         password: pass
       })
         .then(function (response) {
-          console.log(response.data.token);
           if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-            _this.showBlock = false;
-            _this.trackIf = false;
-            _this.text = 'Please highlight any element on the webpage that you want to track';
+            chrome.storage.local.set({ token: response.data.token }).then(() => {
+              _this.showBlock = false;
+              _this.trackIf = false;
+              _this.text = 'Please highlight any element on the webpage that you want to track';
+            });
+
           }
         })
         .catch(function (error) {

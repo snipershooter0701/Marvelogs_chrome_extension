@@ -33,21 +33,22 @@ export default {
     getXPathResult(element) {
       const xpath = this.getXPathChild(element);
       const highlighted_URI = element.baseURI;
-      console.log(xpath);
-      console.log(highlighted_URI);
-
+     
       if (xpath && highlighted_URI) {
         // display the toastr
-        console.log('dddddd');
-        
-        localStorage.setItem('url', highlighted_URI);
-        localStorage.setItem('xpath', xpath);
 
-        chrome.runtime.sendMessage({
-          key: 'highlighted'
-        });
+        chrome.storage.local
+          .set({
+            url: highlighted_URI,
+            xpath: xpath
+          })
+          .then(() => {
+            chrome.runtime.sendMessage({
+              key: 'highlighted'
+            });
+          });
+
       }
-
     },
 
     getXPathChild(child) {
