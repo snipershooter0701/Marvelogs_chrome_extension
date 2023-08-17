@@ -59,8 +59,8 @@ export default {
     }
   },
   mounted() {
-    this.receiveDataToBackground();
     this.handlerLoginedUser();
+    this.receiveDataToBackground();
   },
   methods: {
 
@@ -96,7 +96,7 @@ export default {
           }
         });
       } else {
-        chrome.storage.local.remove(['url', 'xpath'], (result) => {
+        chrome.storage.local.remove(['url', 'xpath'], () => {
           _this.text = 'Please highlight any element on the webpage that you want to track';
         });
       }

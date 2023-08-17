@@ -23,50 +23,100 @@ export default {
   },
   methods: {
     handlerClickEvent() {
-      // const _this = this;
       document.addEventListener('click', (event) => {
         this.highlightItems(event.target);
-        this.getXPathResult(event.target);
+        const xpath = this.getXPathResult(event);
+        const highlighted_URI = event.target.baseURI;
+
+        if (xpath && highlighted_URI) {
+          // display the toastr
+
+          chrome.storage.local
+            .set({
+              url: highlighted_URI,
+              xpath: xpath
+            })
+            .then(() => {
+              chrome.runtime.sendMessage({
+                key: 'highlighted'
+              });
+            });
+        }
       });
     },
 
-    getXPathResult(element) {
-      const xpath = this.getXPathChild(element);
-      const highlighted_URI = element.baseURI;
-     
-      if (xpath && highlighted_URI) {
-        // display the toastr
+    getXPathResult(event) {
 
-        chrome.storage.local
-          .set({
-            url: highlighted_URI,
-            xpath: xpath
-          })
-          .then(() => {
-            chrome.runtime.sendMessage({
-              key: 'highlighted'
-            });
-          });
+      var childElt = event.target;
+      var parentElt = event.target.parentElement;
 
+      var c_idx = this.getEltIndex(parentElt, childElt);
+      var c_tagname = childElt.localName;
+      var c_id = '#' + childElt.id;
+      var c_classname = '.' + childElt.className;
+      var c_Elt = c_classname != '.' ? c_classname : c_id != '#' ? c_id : c_tagname;
+      var xpath = c_Elt + '[' + c_idx + ']';
+
+      while (this.checkChildCnt(childElt, parentElt)) {
+        childElt = parentElt;
+        parentElt = childElt.parentElement;
+
+        c_idx = this.getEltIndex(parentElt, childElt);
+        c_tagname = childElt.localName;
+        c_id = '#' + childElt.id;
+        c_classname = '.' + childElt.className;
+        c_Elt = c_classname != '.' ? c_classname : c_id != '#' ? c_id : c_tagname;
+
+        xpath = c_Elt + '[' + c_idx + '] ' + xpath;
       }
+
+      return xpath;
     },
 
-    getXPathChild(child) {
-      if (child) {
-        const parentElement = child.parentNode;
-        if (parentElement) {
-          const index = Array.from(parentElement.children).indexOf(child);
-          const xpath = this.parseClassName(parentElement.className, child.className, index);
-          return xpath;
+    checkChildCnt(childElt, parentElt) {
+
+      var c_tagname = childElt.localName;
+      var c_id = '#' + childElt.id;
+      var c_classname = '.' + childElt.className;
+      var c_Elt = c_classname != '.' ? c_classname : c_id != '#' ? c_id : c_tagname;
+      const child_cnt = document.querySelectorAll(c_Elt).length;
+
+      var p_tagname = parentElt.localName;
+      var p_id = '#' + parentElt.id;
+      var p_classname = '.' + parentElt.className;
+      var p_Elt = p_classname != '.' ? p_classname : p_id != '#' ? p_id : p_tagname;
+
+      if (child_cnt > 1) {
+
+        const c_idx = this.getEltIndex(parentElt, childElt);
+        const parent_cnt = document.querySelectorAll(p_Elt).length;
+
+        if (parent_cnt > 1) {
+          var i;
+          var j = 0;
+          const parentList = document.querySelectorAll(p_Elt);
+
+          for (i = 0; i < parent_cnt; i++) {
+            const list_Elt = parentList[i].children[c_idx].className ? '.' + parentList[i].children[c_idx].className : parentList[i].children[c_idx].id ? '#' + parentList[i].children[c_idx].id : parentList[i].children[c_idx].localName;
+            if (list_Elt == c_Elt) j++;
+          }
+          if (j > 1) {
+            return true;
+          } else {
+            return false;
+          }
+
+        } else {
+          return false;
         }
+      } else {
+        return false;
       }
     },
 
-    parseClassName(parent, child, index) {
-      const parseParentClassName = parent.replace(' ', '.');
-      const parseChildClassName = child.replace(' ', '.');
-      const parse_xpath = `.${parseParentClassName} .${parseChildClassName}[${index}]`;
-      return parse_xpath;
+    getEltIndex(parentElt, childElt) {
+      const index = Array.from(parentElt.children).indexOf(childElt);
+      return index;
     },
 
     highlightItems(element) {
