@@ -36,7 +36,14 @@
         <button class="button" @:click="trackHighlight(0)">No</button>
       </div>
 
-      <popup v-if="isPopupVisible" :title="popupTitle" :message="popupMessage" @close="closePopup" />
+      <div class="switch-block" v-show="showSwitch">
+        <label class="switch">
+          <input type="checkbox" id="switch_state">
+          <span class="slider round" @:click="changeHighlightState()"></span>
+        </label>
+      </div>
+
+      <!-- <popup v-if="isPopupVisible" :title="popupTitle" :message="popupMessage" @close="closePopup" /> -->
 
     </div>
   </div>
@@ -53,12 +60,11 @@ export default {
       showBlock: true,
       trackIf: false,
       text: '',
-      isPopupVisible: false,
-      popupTitle: "title",
-      popupMessage: "You are welcome"
+      showSwitch: false
     }
   },
   mounted() {
+    // this.changeHighlightState();
     this.handlerLoginedUser();
     this.receiveDataToBackground();
   },
@@ -96,8 +102,15 @@ export default {
           }
         });
       } else {
-        chrome.storage.local.remove(['url', 'xpath'], () => {
+
+        chrome.storage.local.set({ highlight_state: 'stop' }).then(() => {
+          document.getElementById("switch_state").checked = false;
+        });
+        chrome.storage.local.remove(["url", "xpath"], () => {
           _this.text = 'Please highlight any element on the webpage that you want to track';
+          chrome.runtime.sendMessage({
+            key: 'unTracked'
+          });
         });
       }
     },
@@ -108,27 +121,51 @@ export default {
           this.showBlock = false;
           this.text = 'Are you sure you want to track this?';
           this.trackIf = true;
+          this.showSwitch = true;
         }
       });
     },
 
     handlerLoginedUser() {
-      chrome.storage.local.get(["token", "url", "xpath"]).then((result) => {
+      // chrome.storage.local.clear(() => { });
+      chrome.storage.local.get(["token", "url", "xpath", "highlight_state"]).then((result) => {
         if (result.token && (result.url && result.xpath)) {
           this.showBlock = false;
           this.text = 'Are you sure you want to track this?';
           this.trackIf = true;
-
         } else if (result.token && !(result.url && result.xpath)) {
           this.showBlock = false;
           this.trackIf = false;
           this.text = 'Please highlight any element on the webpage that you want to track';
         }
+
+        if (result.highlight_state == "stop") {
+          this.showSwitch = true;
+          document.getElementById("switch_state").checked = false;
+        } else if (result.highlight_state == "start") {
+          this.showSwitch = true;
+          document.getElementById("switch_state").checked = true;
+        } else {
+          this.showSwitch = false;
+        }
+      });
+    },
+
+    changeHighlightState() {
+
+      console.log('change');
+      chrome.storage.local.get(["highlight_state"]).then((result) => {
+
+        console.log(result.highlight_state);
+
+        if (result.highlight_state == 'stop') chrome.storage.local.set({ highlight_state: 'start' });
+        else chrome.storage.local.set({ highlight_state: 'stop' });
       });
     },
 
     loginUser(event) {
       event.preventDefault();
+      console.log('star')
       const _this = this;
       const email = document.getElementById('extension_email').value;
       const pass = document.getElementById('extension_pass').value;
@@ -139,12 +176,12 @@ export default {
       })
         .then(function (response) {
           if (response.data.token) {
-            chrome.storage.local.set({ token: response.data.token }).then(() => {
+            chrome.storage.local.set({ token: response.data.token, highlight_state: 'stop' }).then(() => {
               _this.showBlock = false;
               _this.trackIf = false;
+              _this.showSwitch = true;
               _this.text = 'Please highlight any element on the webpage that you want to track';
             });
-
           }
         })
         .catch(function (error) {
@@ -187,6 +224,7 @@ body {
   height: 350px;
   padding: 25px 40px 10px 40px;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .container .text {
@@ -208,7 +246,6 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-top: 40px;
-
 }
 
 .container form {
@@ -360,5 +397,75 @@ form .form-row .textarea {
   .submit-btn .input-data {
     width: 100% !important;
   }
+}
+
+
+
+/* Highlight ON, OFF button */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 45px;
+  height: 19px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked+.slider {
+  background-color: #2196F3;
+}
+
+input:focus+.slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked+.slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.switch-block {
+  text-align: end;
+  position: absolute;
+  bottom: 25px;
+  right: 45px;
 }
 </style>

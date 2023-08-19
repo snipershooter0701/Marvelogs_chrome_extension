@@ -13,6 +13,7 @@ export default {
   mounted() {
     // this.index();
     this.handlerClickEvent();
+    this.receiveDataToBackground();
   },
   unmounted() {
   },
@@ -23,25 +24,33 @@ export default {
   },
   methods: {
     handlerClickEvent() {
+
       document.addEventListener('click', (event) => {
-        this.highlightItems(event.target);
-        const xpath = this.getXPathResult(event);
-        const highlighted_URI = event.target.baseURI;
 
-        if (xpath && highlighted_URI) {
-          // display the toastr
+        console.log('click_highlight');
+        chrome.storage.local.get(['highlight_state']).then((result) => {
+          if (result.highlight_state == 'start') {
+            this.highlightItems(event.target);
+            const xpath = this.getXPathResult(event);
+            const highlighted_URI = event.target.baseURI;
 
-          chrome.storage.local
-            .set({
-              url: highlighted_URI,
-              xpath: xpath
-            })
-            .then(() => {
-              chrome.runtime.sendMessage({
-                key: 'highlighted'
-              });
-            });
-        }
+            if (xpath && highlighted_URI) {
+              // display the toastr
+
+              chrome.storage.local
+                .set({
+                  url: highlighted_URI,
+                  xpath: xpath
+                })
+                .then(() => {
+                  chrome.runtime.sendMessage({
+                    key: 'highlighted'
+                  });
+                });
+            }
+          }
+
+        });
       });
     },
 
@@ -119,6 +128,19 @@ export default {
       return index;
     },
 
+    receiveDataToBackground() {
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message.key == 'removeHighlight') {
+          const highlightedItems = document.querySelectorAll('.highlighted');
+          if (highlightedItems.length > 0) {
+            highlightedItems.forEach(item => {
+              item.classList.remove('highlighted');
+            });
+          }
+        }
+      });
+    },
+
     highlightItems(element) {
       const highlightedItems = document.querySelectorAll('.highlighted');
       if (highlightedItems.length > 0) {
@@ -138,7 +160,6 @@ export default {
         event.target.classList.remove('border-yellow');
       });
     }
-
   },
   watch: {},
 };
